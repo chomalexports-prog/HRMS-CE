@@ -1,7 +1,21 @@
+export type UserRole = 'admin' | 'employee';
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar: string;
+  department: string;
+  jobTitle: string;
+  employeeId?: string; // links to Employee.id for employee role
+}
+
 export interface Employee {
   id: string;
   name: string;
   email: string;
+  password?: string; // optional; used for local credential lookup
   avatar: string;
   role: string;
   department: string;

@@ -22,10 +22,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Sun,
-  Moon
+  Moon,
+  Shield
 } from 'lucide-react';
 
 import LandingPage from './components/LandingPage';
+import AuthModal from './components/AuthModal';
 import DashboardView from './components/modules/DashboardView';
 import EmployeesView from './components/modules/EmployeesView';
 import LeavesView from './components/modules/LeavesView';
@@ -51,7 +53,7 @@ import {
   initialEmailCampaigns 
 } from './data';
 
-import { Employee, LeaveRequest, AttendanceLog, EmployeeDocument, JobOpening, Candidate, Asset, Appraisal, HRNotification, EmailLog } from './types';
+import { Employee, LeaveRequest, AttendanceLog, EmployeeDocument, JobOpening, Candidate, Asset, Appraisal, HRNotification, EmailLog, AuthUser } from './types';
 
 type TabType = 
   | 'dashboard' 
@@ -67,7 +69,30 @@ type TabType =
   | 'emailhub';
 
 export default function App() {
-  const [viewMode, setViewMode] = useState<'landing' | 'app'>('landing');
+  // ── Auth State ────────────────────────────────────────────────────────────
+  const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
+    try {
+      const saved = localStorage.getItem('hrms-ce-auth-user');
+      return saved ? (JSON.parse(saved) as AuthUser) : null;
+    } catch { return null; }
+  });
+
+  const handleLogin = (user: AuthUser) => {
+    setAuthUser(user);
+    localStorage.setItem('hrms-ce-auth-user', JSON.stringify(user));
+    setViewMode('app');
+    setActiveTab('dashboard');
+  };
+
+  const handleSignOut = () => {
+    setAuthUser(null);
+    localStorage.removeItem('hrms-ce-auth-user');
+    setViewMode('landing');
+  };
+
+  const [viewMode, setViewMode] = useState<'landing' | 'app' | 'auth'>(
+    () => (localStorage.getItem('hrms-ce-auth-user') ? 'app' : 'landing')
+  );
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
@@ -333,25 +358,32 @@ export default function App() {
   if (viewMode === 'landing') {
     return (
       <LandingPage 
-        onEnterApp={() => setViewMode('app')} 
+        onEnterApp={() => setViewMode('auth')} 
         theme={theme}
         onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
       />
     );
   }
 
-  // Sidebar Tabs Config
-  const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart2 },
-    { id: 'employees', label: 'Employee Directory', icon: Users },
-    { id: 'leaves', label: 'Leaves & Attendance', icon: Calendar },
-    { id: 'payroll', label: 'Payroll Operations', icon: CreditCard },
-    { id: 'documents', label: 'Secure Documents', icon: FolderLock },
-    { id: 'idcard', label: 'ID Badge Generator', icon: Sparkles },
-    { id: 'recruitment', label: 'Recruitment (ATS)', icon: Briefcase },
-    { id: 'assets', label: 'Hardware Assets', icon: Laptop },
-    { id: 'emailhub', label: 'Email Dispatch Hub', icon: Mail },
+  if (viewMode === 'auth') {
+    return <AuthModal onLogin={handleLogin} theme={theme} />;
+  }
+
+  // Sidebar Tabs Config — role-based filtering
+  const isAdmin = authUser?.role === 'admin';
+  const allTabs = [
+    { id: 'dashboard',   label: 'Dashboard',           icon: BarChart2,  adminOnly: false },
+    { id: 'employees',   label: 'Employee Directory',   icon: Users,      adminOnly: true  },
+    { id: 'leaves',      label: 'Leaves & Attendance',  icon: Calendar,   adminOnly: false },
+    { id: 'payroll',     label: 'Payroll Operations',   icon: CreditCard, adminOnly: false },
+    { id: 'documents',   label: 'Secure Documents',     icon: FolderLock, adminOnly: false },
+    { id: 'idcard',      label: 'ID Badge Generator',   icon: Sparkles,   adminOnly: false },
+    { id: 'recruitment', label: 'Recruitment (ATS)',    icon: Briefcase,  adminOnly: true  },
+    { id: 'assets',      label: 'Hardware Assets',      icon: Laptop,     adminOnly: false },
+    { id: 'orgchart',    label: 'Org Chart',            icon: Network,    adminOnly: false },
+    { id: 'emailhub',    label: 'Email Dispatch Hub',   icon: Mail,       adminOnly: true  },
   ] as const;
+  const tabs = allTabs.filter(t => isAdmin || !t.adminOnly);
 
   const activeNotificationCount = notifications.filter(n => !n.read).length;
 
@@ -393,9 +425,9 @@ export default function App() {
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
                 <button 
-                  onClick={() => setViewMode('landing')}
+                  onClick={handleSignOut}
                   className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
-                  title="Return to Welcome Screen"
+                  title="Sign Out"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
@@ -469,28 +501,45 @@ export default function App() {
 
         </div>
 
-        {/* Dynamic Logged-in Person Profile Footer - Fixed Position */}
-        <div className={`p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center transition-colors duration-200 sticky bottom-0 z-10 shrink-0 ${
-          sidebarCollapsed ? 'justify-center' : 'justify-between'
+        {/* Logged-in User Profile Footer */}
+        <div className={`p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors duration-200 sticky bottom-0 z-10 shrink-0 ${
+          sidebarCollapsed ? 'flex justify-center' : 'space-y-2'
         }`}>
-          <div className="flex items-center gap-2 min-w-0">
-            <img 
-              src={currentUser.avatar} 
-              alt={currentUser.name} 
-              className="w-8 h-8 rounded-full object-cover border-2 border-indigo-100 dark:border-indigo-900 shrink-0"
-              title={sidebarCollapsed ? `${currentUser.name} (${currentUser.role})` : undefined}
-            />
-            {!sidebarCollapsed && (
-              <div className="min-w-0">
-                <span className="text-[11px] font-bold text-slate-900 dark:text-slate-200 block truncate">{currentUser.name}</span>
-                <span className="text-[9px] text-slate-600 dark:text-slate-400 font-mono block truncate">{currentUser.email}</span>
+          <div className={`flex items-center gap-2 min-w-0 ${sidebarCollapsed ? '' : 'justify-between'}`}>
+            <div className="flex items-center gap-2 min-w-0">
+              <img 
+                src={authUser?.avatar || currentUser.avatar} 
+                alt={authUser?.name || currentUser.name} 
+                className="w-8 h-8 rounded-full object-cover border-2 border-indigo-100 dark:border-indigo-900 shrink-0"
+                title={sidebarCollapsed ? `${authUser?.name || currentUser.name}` : undefined}
+              />
+              {!sidebarCollapsed && (
+                <div className="min-w-0">
+                  <span className="text-[11px] font-bold text-slate-900 dark:text-slate-200 block truncate">{authUser?.name || currentUser.name}</span>
+                  <span className="text-[9px] text-slate-500 dark:text-slate-400 font-mono block truncate">{authUser?.email || currentUser.email}</span>
+                </div>
+              )}
+            </div>
+            {!sidebarCollapsed && authUser && (
+              <div className="flex items-center gap-1 shrink-0">
+                <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded border ${
+                  authUser.role === 'admin'
+                    ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 border-indigo-100 dark:border-indigo-900/40'
+                    : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border-emerald-100 dark:border-emerald-900/40'
+                }`}>
+                  {authUser.role === 'admin' ? '👑 ADMIN' : '👤 EMP'}
+                </span>
               </div>
             )}
           </div>
           {!sidebarCollapsed && (
-            <span className="text-[9px] font-bold font-mono text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100 dark:border-indigo-900/40 px-1.5 py-0.5 rounded shrink-0">
-              {currentUser.role === 'VP of Engineering' ? 'VP' : currentUser.role.substring(0, 3).toUpperCase()}
-            </span>
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all border border-transparent hover:border-red-100 dark:hover:border-red-900/40 cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
+            </button>
           )}
         </div>
 
@@ -511,11 +560,24 @@ export default function App() {
             </button>
             <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Enterprise Dashboard</span>
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                {authUser?.role === 'admin' ? 'Admin Console' : 'Employee Portal'}
+              </span>
               <span className="text-xs text-slate-300 dark:text-slate-700">/</span>
               <span className="text-xs font-bold text-slate-900 dark:text-white uppercase font-mono tracking-wider">{activeTab}</span>
             </div>
+            {authUser && (
+              <span className={`hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                authUser.role === 'admin'
+                  ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 border-indigo-200 dark:border-indigo-800'
+                  : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800'
+              }`}>
+                {authUser.role === 'admin' ? <Shield className="w-2.5 h-2.5" /> : <span>👤</span>}
+                {authUser.role === 'admin' ? 'Admin' : authUser.jobTitle}
+              </span>
+            )}
           </div>
+
 
           <div className="flex items-center gap-4">
             
