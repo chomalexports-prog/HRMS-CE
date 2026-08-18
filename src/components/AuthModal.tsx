@@ -1,6 +1,6 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Mail, Lock, LogIn, Shield, Eye, EyeOff, AlertCircle, Sparkles, ChevronRight } from "lucide-react";
+import { Mail, Lock, LogIn, Eye, EyeOff, AlertCircle, ChevronRight } from "lucide-react";
 import { AuthUser } from "../types";
 import chomalLogo from "../assets/chomal-logo.png";
 import { ADMIN_AUTH_USER, ADMIN_PASSWORD, initialEmployees } from "../data";
@@ -9,21 +9,6 @@ interface AuthModalProps {
   onLogin: (user: AuthUser) => void;
   theme: "light" | "dark";
 }
-
-interface QuickLogin {
-  label: string;
-  email: string;
-  password: string;
-  color: string;
-  badge: string;
-}
-
-const QUICK_LOGINS: QuickLogin[] = [
-  { label: "Admin",      email: "admin@hrms-ce.com",  password: "admin123",  color: "from-indigo-600 to-violet-600",  badge: "👑" },
-  { label: "Sarah (HR)", email: "sarah@hrms-ce.com",  password: "sarah123",  color: "from-sky-500 to-blue-600",       badge: "👤" },
-  { label: "Alex (Eng)", email: "alex@hrms-ce.com",   password: "alex123",   color: "from-emerald-500 to-teal-600",   badge: "👤" },
-  { label: "Priya (PM)", email: "priya@hrms-ce.com",  password: "priya123",  color: "from-amber-500 to-orange-600",   badge: "👤" },
-];
 
 export default function AuthModal({ onLogin }: AuthModalProps) {
   const [email, setEmail]       = useState("");
@@ -67,15 +52,6 @@ export default function AuthModal({ onLogin }: AuthModalProps) {
     onLogin(user);
   };
 
-  const handleQuickLogin = async (ql: QuickLogin) => {
-    setError("");
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 400));
-    const user = authenticate(ql.email, ql.password);
-    setLoading(false);
-    if (user) onLogin(user);
-  };
-
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 via-indigo-50/30 to-slate-100 dark:from-slate-950 dark:via-indigo-950/20 dark:to-slate-900 p-4 relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -110,37 +86,6 @@ export default function AuthModal({ onLogin }: AuthModalProps) {
           </div>
 
           <div className="px-8 py-7 space-y-5">
-            {/* Quick Login Chips */}
-            <div>
-              <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-3">
-                Quick Demo Access
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {QUICK_LOGINS.map((ql) => (
-                  <motion.button
-                    key={ql.email}
-                    whileHover={{ scale: 1.02, y: -1 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => handleQuickLogin(ql)}
-                    disabled={loading}
-                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r ${ql.color} text-white text-xs font-semibold shadow-md transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer`}
-                  >
-                    <span className="text-base leading-none">{ql.badge}</span>
-                    <div className="text-left">
-                      <div className="font-bold">{ql.label}</div>
-                      <div className="text-white/70 text-[10px] truncate">{ql.email}</div>
-                    </div>
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative flex items-center gap-3">
-              <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
-              <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">or sign in manually</span>
-              <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
-            </div>
-
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
@@ -153,7 +98,7 @@ export default function AuthModal({ onLogin }: AuthModalProps) {
                     autoComplete="email"
                     value={email}
                     onChange={e => { setEmail(e.target.value); setError(""); }}
-                    placeholder="you@hrms-ce.com"
+                    placeholder="you@chomalexports.com"
                     className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
                   />
                 </div>
@@ -218,26 +163,9 @@ export default function AuthModal({ onLogin }: AuthModalProps) {
                 )}
               </motion.button>
             </form>
-
-            {/* Credentials hint */}
-            <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 p-3.5 space-y-1.5">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Shield className="w-3.5 h-3.5 text-indigo-500" />
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Demo Credentials</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1"><span>👑</span> Admin</span>
-                <code className="text-[11px] text-indigo-600 dark:text-indigo-400 font-mono bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 rounded-lg">admin@hrms-ce.com / admin123</code>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-600 dark:text-slate-400 flex items-center gap-1"><span>👤</span> Employee</span>
-                <code className="text-[11px] text-sky-600 dark:text-sky-400 font-mono bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded-lg">sarah@hrms-ce.com / sarah123</code>
-              </div>
-            </div>
           </div>
         </div>
       </motion.div>
     </div>
   );
 }
-
