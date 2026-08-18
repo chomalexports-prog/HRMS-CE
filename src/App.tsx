@@ -28,6 +28,7 @@ import {
 
 import LandingPage from './components/LandingPage';
 import AuthModal from './components/AuthModal';
+import chomalLogo from './assets/chomal-logo.png';
 import DashboardView from './components/modules/DashboardView';
 import EmployeesView from './components/modules/EmployeesView';
 import LeavesView from './components/modules/LeavesView';
@@ -398,15 +399,15 @@ export default function App() {
           {/* Brand Identity Header */}
           <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
             <div className="flex items-center gap-2">
-              <motion.div 
-                whileHover={{ rotate: sidebarCollapsed ? 90 : 0, scale: 1.05 }}
+              <motion.img
+                src={chomalLogo}
+                alt="Chomal Exports"
+                whileHover={{ scale: 1.08, rotate: sidebarCollapsed ? 10 : 0 }}
                 whileTap={{ scale: 0.95 }}
-                className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-sm shadow-indigo-500/15 cursor-pointer shrink-0"
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                title={sidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-              >
-                <Layers className="w-4 h-4 text-white" />
-              </motion.div>
+                className="w-8 h-8 rounded-full object-cover border-2 border-indigo-200 dark:border-indigo-800 shadow-sm cursor-pointer shrink-0"
+                title={sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+              />
               {!sidebarCollapsed && (
                 <>
                   <span className="font-semibold text-[15px] tracking-tight text-slate-900 dark:text-white">HRMS-CE</span>

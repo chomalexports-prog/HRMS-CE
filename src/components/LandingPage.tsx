@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import chomalLogo from '../assets/chomal-logo.png';
 import { 
   Shield, 
   Clock, 
@@ -53,15 +54,17 @@ export default function LandingPage({ onEnterApp, theme, onToggleTheme }: Landin
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="flex justify-between items-center py-6 border-b border-slate-200 dark:border-slate-800 mb-12 sm:mb-16"
         >
-          <div className="flex items-center gap-2">
-            <motion.div 
-              whileHover={{ rotate: 15, scale: 1.05 }}
-              className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-500/20"
-            >
-              <Layers className="w-4.5 h-4.5 text-white" />
-            </motion.div>
-            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">HRMS-CE</span>
-            <span className="px-2 py-0.5 text-[10px] bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-full font-mono border border-indigo-100 dark:border-indigo-900/30">v2.1</span>
+          <div className="flex items-center gap-3">
+            <motion.img
+              src={chomalLogo}
+              alt="Chomal Exports Logo"
+              whileHover={{ scale: 1.08, rotate: 5 }}
+              className="w-10 h-10 rounded-full object-cover shadow-md border-2 border-indigo-100 dark:border-indigo-900"
+            />
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">HRMS-CE</span>
+              <span className="px-2 py-0.5 text-[10px] bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-full font-mono border border-indigo-100 dark:border-indigo-900/30">v2.1</span>
+            </div>
           </div>
           
           <div className="flex items-center gap-3">

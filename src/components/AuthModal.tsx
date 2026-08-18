@@ -2,6 +2,7 @@
 import { motion, AnimatePresence } from "motion/react";
 import { Mail, Lock, LogIn, Shield, Eye, EyeOff, AlertCircle, Sparkles, ChevronRight } from "lucide-react";
 import { AuthUser } from "../types";
+import chomalLogo from "../assets/chomal-logo.png";
 import { ADMIN_AUTH_USER, ADMIN_PASSWORD, initialEmployees } from "../data";
 
 interface AuthModalProps {
@@ -92,9 +93,12 @@ export default function AuthModal({ onLogin }: AuthModalProps) {
           {/* Header */}
           <div className="bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 px-8 py-7 relative overflow-hidden">
             <div className="relative flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
+              <motion.img
+                src={chomalLogo}
+                alt="Chomal Exports"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                className="w-12 h-12 rounded-full object-cover border-2 border-white/40 shadow-lg"
+              />
               <div>
                 <h1 className="text-white font-bold text-lg tracking-tight">HRMS-CE</h1>
                 <p className="text-indigo-200 text-xs font-medium">Human Resource Management System</p>
@@ -236,3 +240,4 @@ export default function AuthModal({ onLogin }: AuthModalProps) {
     </div>
   );
 }
+
