@@ -40,19 +40,7 @@ import PerformanceView from './components/modules/PerformanceView';
 import AssetsView from './components/modules/AssetsView';
 import OrgChartView from './components/modules/OrgChartView';
 import EmailHubView from './components/modules/EmailHubView';
-
-import { 
-  initialEmployees, 
-  initialLeaveRequests, 
-  initialAttendanceLogs, 
-  initialDocuments, 
-  initialJobOpenings, 
-  initialCandidates, 
-  initialAssets, 
-  initialAppraisals, 
-  initialNotifications, 
-  initialEmailCampaigns 
-} from './data';
+import { useDb } from './hooks/useDb';
 
 import { Employee, LeaveRequest, AttendanceLog, EmployeeDocument, JobOpening, Candidate, Asset, Appraisal, HRNotification, EmailLog, AuthUser } from './types';
 
@@ -112,10 +100,25 @@ export default function App() {
     }
     localStorage.setItem('hrms-ce-theme', theme);
   }, [theme]);
-
   // Shared application states
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+  
+  const {
+    employees,
+    leaveRequests,
+    attendanceLogs,
+    documents,
+    jobOpenings,
+    candidates,
+    assets,
+    appraisals,
+    notifications,
+    emailCampaigns,
+    loading,
+    addRecord,
+    updateRecord,
+    deleteRecord
+  } = useDb();
 
   // Dynamically derive currentUser from the employee directory. Falls back to a
   // generic placeholder profile until at least one employee has been added.
@@ -131,14 +134,6 @@ export default function App() {
     hireDate: new Date().toISOString().split('T')[0],
     salary: { basic: 0, hra: 0, allowances: 0, deductions: 0 }
   };
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(initialLeaveRequests);
-  const [attendanceLogs, setAttendanceLogs] = useState<AttendanceLog[]>(initialAttendanceLogs);
-  const [documents, setDocuments] = useState<EmployeeDocument[]>(initialDocuments);
-  const [jobOpenings, setJobOpenings] = useState<JobOpening[]>(initialJobOpenings);
-  const [candidates, setCandidates] = useState<Candidate[]>(initialCandidates);
-  const [assets, setAssets] = useState<Asset[]>(initialAssets);
-  const [appraisals, setAppraisals] = useState<Appraisal[]>(initialAppraisals);
-  const [notifications, setNotifications] = useState<HRNotification[]>(initialNotifications);
   
   const [emailLogs, setEmailLogs] = useState<EmailLog[]>([]);
 
@@ -155,86 +150,88 @@ export default function App() {
 
   // Leave Handlers
   const handleApproveLeave = (id: string) => {
-    setLeaveRequests(prev => prev.map(req => req.id === id ? { ...req, status: 'Approved' } : req));
+    updateRecord('leaveRequests', id, { status: 'Approved' });
     // Automatically add present log if approved
     const target = leaveRequests.find(r => r.id === id);
     if (target) {
       // Send a compliance notification
+      const ntfId = `NTF-${Math.random().toString()}`;
       const newNtf: HRNotification = {
-        id: `NTF-${Math.random().toString()}`,
+        id: ntfId,
         title: 'Leave Approved',
         message: `Leave request for ${target.employeeName} has been approved.`,
         date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         type: 'leave',
         read: false
       };
-      setNotifications(prev => [newNtf, ...prev]);
+      addRecord('notifications', ntfId, newNtf);
     }
   };
 
   const handleRejectLeave = (id: string) => {
-    setLeaveRequests(prev => prev.map(req => req.id === id ? { ...req, status: 'Rejected' } : req));
+    updateRecord('leaveRequests', id, { status: 'Rejected' });
   };
 
   const handleApplyLeave = (newReq: Omit<LeaveRequest, 'id'>) => {
     const id = `LRV-${Math.floor(Math.random() * 900) + 100}`;
-    setLeaveRequests(prev => [{ ...newReq, id }, ...prev]);
+    addRecord('leaveRequests', id, { ...newReq, id });
     
     // Add pending notification
+    const ntfId = `NTF-${Math.random().toString()}`;
     const newNtf: HRNotification = {
-      id: `NTF-${Math.random().toString()}`,
+      id: ntfId,
       title: 'New Leave Applied',
       message: `${newReq.employeeName} submitted a ${newReq.leaveType} request.`,
       date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       type: 'leave',
       read: false
     };
-    setNotifications(prev => [newNtf, ...prev]);
+    addRecord('notifications', ntfId, newNtf);
   };
 
   // Document Handlers
   const handleAddDocument = (newDoc: Omit<EmployeeDocument, 'id'>) => {
     const id = `DOC-${Math.floor(Math.random() * 900) + 100}`;
-    setDocuments(prev => [{ ...newDoc, id }, ...prev]);
+    addRecord('documents', id, { ...newDoc, id });
   };
 
   const handleDeleteDocument = (id: string) => {
-    setDocuments(prev => prev.filter(d => d.id !== id));
+    deleteRecord('documents', id);
   };
 
   // Recruitment Handlers
   const handleAddJobOpening = (newJob: Omit<JobOpening, 'id' | 'applicantsCount'>) => {
     const id = `JOB-${Math.floor(Math.random() * 900) + 100}`;
-    setJobOpenings(prev => [...prev, { ...newJob, id, applicantsCount: 0 }]);
+    addRecord('jobOpenings', id, { ...newJob, id, applicantsCount: 0 });
   };
 
   const handleAddCandidate = (newCand: Omit<Candidate, 'id' | 'appliedDate'>) => {
     const id = `CND-${Math.floor(Math.random() * 900) + 100}`;
-    setCandidates(prev => [...prev, { ...newCand, id, appliedDate: new Date().toISOString().split('T')[0] }]);
+    addRecord('candidates', id, { ...newCand, id, appliedDate: new Date().toISOString().split('T')[0] });
   };
 
   const handleUpdateCandidateStage = (id: string, stage: Candidate['stage']) => {
-    setCandidates(prev => prev.map(c => c.id === id ? { ...c, stage } : c));
+    updateRecord('candidates', id, { stage });
   };
 
   const handleEvaluateCandidateAI = (id: string, score: number, evalText: string) => {
-    setCandidates(prev => prev.map(c => c.id === id ? { ...c, aiScore: score, aiEvaluation: evalText } : c));
+    updateRecord('candidates', id, { aiScore: score, aiEvaluation: evalText });
   };
 
   // Performance Handlers
   const handleAddAppraisal = (newApp: Omit<Appraisal, 'id' | 'date'>) => {
     const id = `APP-${Math.floor(Math.random() * 900) + 100}`;
-    setAppraisals(prev => [{ ...newApp, id, date: new Date().toISOString().split('T')[0] }, ...prev]);
+    addRecord('appraisals', id, { ...newApp, id, date: new Date().toISOString().split('T')[0] });
   };
 
   const handleApproveAppraisal = (id: string) => {
-    setAppraisals(prev => prev.map(a => a.id === id ? { ...a, status: 'Approved' } : a));
+    updateRecord('appraisals', id, { status: 'Approved' });
   };
 
   // Asset Handlers
   const handleAddAsset = (newAsset: Omit<Asset, 'id'>) => {
     const id = `AST-${Math.floor(Math.random() * 900) + 100}`;
-    setAssets(prev => [...prev, { ...newAsset, id }]);
+    addRecord('assets', id, { ...newAsset, id });
   };
 
   const handleUpdateAssetStatus = (id: string, status: Asset['status'], assignedToId?: string) => {
@@ -244,19 +241,17 @@ export default function App() {
       if (emp) assignedToName = emp.name;
     }
 
-    setAssets(prev => prev.map(a => a.id === id ? { 
-      ...a, 
+    updateRecord('assets', id, { 
       status, 
       assignedToId: assignedToId || undefined, 
       assignedToName: assignedToName || undefined 
-    } : a));
+    });
   };
 
   const handleDeleteAsset = (id: string) => {
-    setAssets(prev => prev.filter(a => a.id !== id));
+    deleteRecord('assets', id);
   };
 
-  // Email Handlers
   const handleTriggerEmailCampaign = async (campaign: Omit<EmailLog, 'id' | 'timestamp'>) => {
     const id = `EML-${Math.floor(Math.random() * 900) + 100}`;
     const timestamp = new Date().toLocaleString([], { hour: '2-digit', minute: '2-digit', year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -288,8 +283,9 @@ export default function App() {
         } : log));
         
         // Add success notification
+        const ntfId = `NTF-${Math.random().toString()}`;
         const newNtf: HRNotification = {
-          id: `NTF-${Math.random().toString()}`,
+          id: ntfId,
           title: data.mode === 'ethereal' ? 'Free Auto-SMTP Delivered' : 'Email Campaign Dispatched',
           message: data.mode === 'ethereal' 
             ? `Successfully delivered via Ethereal SMTP! Click the 'View Delievered Inbox' link in the outbox to see it.`
@@ -298,35 +294,37 @@ export default function App() {
           type: 'general',
           read: false
         };
-        setNotifications(prev => [newNtf, ...prev]);
+        addRecord('notifications', ntfId, newNtf);
       } else {
         // Simulated or warning from server
         const targetStatus = data.mode === 'smtp-failed' ? 'SMTP-Failed' : 'Failed';
         setEmailLogs(prev => prev.map(log => log.id === id ? { ...log, status: targetStatus } : log));
 
+        const ntfId = `NTF-${Math.random().toString()}`;
         const newNtf: HRNotification = {
-          id: `NTF-${Math.random().toString()}`,
+          id: ntfId,
           title: 'Delivery Warning',
           message: data.message || 'The server declined the email request.',
           date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           type: 'general',
           read: false
         };
-        setNotifications(prev => [newNtf, ...prev]);
+        addRecord('notifications', ntfId, newNtf);
       }
     } catch (error: any) {
       console.error("Email sending exception:", error);
       setEmailLogs(prev => prev.map(log => log.id === id ? { ...log, status: 'Failed' } : log));
 
+      const ntfId = `NTF-${Math.random().toString()}`;
       const newNtf: HRNotification = {
-        id: `NTF-${Math.random().toString()}`,
+        id: ntfId,
         title: 'Connection Refused',
         message: `Failed to contact mail service: ${error.message}`,
         date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         type: 'general',
         read: false
       };
-      setNotifications(prev => [newNtf, ...prev]);
+      addRecord('notifications', ntfId, newNtf);
     }
   };
 
@@ -342,24 +340,24 @@ export default function App() {
     const suffix = id.slice(-4);
     const generatedPassword = `${firstName}@${suffix}`;
     const employee: Employee = { ...newEmp, id, password: generatedPassword };
-    setEmployees(prev => [employee, ...prev]);
+    addRecord('employees', id, employee);
     return employee;
   };
 
   const handleEditEmployee = (id: string, updatedFields: Partial<Employee>) => {
-    setEmployees(prev => prev.map(e => e.id === id ? { ...e, ...updatedFields } as Employee : e));
+    updateRecord('employees', id, updatedFields);
   };
 
   const handleDeleteEmployee = (id: string) => {
-    setEmployees(prev => prev.filter(e => e.id !== id));
+    deleteRecord('employees', id);
   };
 
   const handleMarkNotificationRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    updateRecord('notifications', id, { read: true });
   };
 
   const handleClearNotifications = () => {
-    setNotifications([]);
+    notifications.forEach(n => deleteRecord('notifications', n.id));
   };
 
   if (viewMode === 'landing') {
@@ -393,6 +391,17 @@ export default function App() {
   const tabs = allTabs.filter(t => isAdmin || !t.adminOnly);
 
   const activeNotificationCount = notifications.filter(n => !n.read).length;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+          <p className="text-sm font-medium animate-pulse text-slate-500">Connecting to database...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex relative transition-colors duration-200">
@@ -682,17 +691,16 @@ export default function App() {
                 if (tab === 'idcards') setActiveTab('idcard');
                 else setActiveTab(tab);
               }}
-              onQuickCheckIn={() => {
-                const isClockedIn = attendanceLogs.some(log => log.employeeId === currentUser.id && !log.checkOut);
-                if (isClockedIn) {
-                  setAttendanceLogs(prev => prev.map(log => 
-                    log.employeeId === currentUser.id && !log.checkOut 
-                      ? { ...log, checkOut: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) } 
-                      : log
-                  ));
+              onCheckInOut={() => {
+                const todayLog = attendanceLogs.find(log => log.employeeId === currentUser.id && !log.checkOut);
+                if (todayLog) {
+                  updateRecord('attendanceLogs', todayLog.id, {
+                    checkOut: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  });
                 } else {
+                  const id = `ATT-${Math.floor(Math.random() * 900) + 100}`;
                   const newLog: AttendanceLog = {
-                    id: `ATT-${Math.floor(Math.random() * 900) + 100}`,
+                    id,
                     employeeId: currentUser.id,
                     employeeName: currentUser.name,
                     date: new Date().toISOString().split('T')[0],
@@ -700,7 +708,7 @@ export default function App() {
                     checkOut: null,
                     status: 'Present'
                   };
-                  setAttendanceLogs(prev => [newLog, ...prev]);
+                  addRecord('attendanceLogs', id, newLog);
                 }
               }}
               isCheckedIn={attendanceLogs.some(log => log.employeeId === currentUser.id && !log.checkOut)}
