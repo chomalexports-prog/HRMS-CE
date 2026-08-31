@@ -370,12 +370,30 @@ export default function App() {
     );
   }
 
-  if (loading) {
+  if (loading || error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-          <p className="text-sm font-medium animate-pulse text-slate-500">Connecting to database...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 p-4">
+        <div className="flex flex-col items-center gap-4 max-w-md text-center">
+          {error ? (
+            <>
+              <div className="w-12 h-12 flex items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Database Connection Failed</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                {error}
+              </p>
+              <div className="mt-4 p-4 bg-slate-100 dark:bg-slate-900 rounded-lg text-left text-xs text-slate-700 dark:text-slate-300 w-full border border-slate-200 dark:border-slate-800">
+                <strong>Running on Vercel or a new environment?</strong><br/>
+                Make sure you have added your Firebase environment variables to your deployment platform's settings (e.g., Vercel Project Settings &gt; Environment Variables).
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+              <p className="text-sm font-medium animate-pulse text-slate-500">Connecting to database...</p>
+            </>
+          )}
         </div>
       </div>
     );

@@ -28,6 +28,7 @@ export function useDb() {
   const [passwordResetRequests, setPasswordResetRequests] = useState<PasswordResetRequest[]>([]);
   
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Array of collections to subscribe to
@@ -55,9 +56,12 @@ export function useDb() {
         initializedCount++;
         if (initializedCount >= collections.length) {
           setLoading(false);
+          setError(null);
         }
-      }, (error) => {
-        console.error(`Error fetching ${name}:`, error);
+      }, (err) => {
+        console.error(`Error fetching ${name}:`, err);
+        setError(`Failed to connect to Firebase database. Please check your configuration.`);
+        setLoading(false);
       });
     });
 
@@ -90,6 +94,7 @@ export function useDb() {
     emailCampaigns,
     passwordResetRequests,
     loading,
+    error,
     addRecord,
     updateRecord,
     deleteRecord
