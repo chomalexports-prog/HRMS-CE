@@ -335,9 +335,15 @@ export default function App() {
   };
 
   // Employee CRUD handlers
-  const handleAddEmployee = (newEmp: Omit<Employee, 'id'>) => {
-    const id = `EMP-${Math.floor(Math.random() * 900) + 100}`;
-    setEmployees(prev => [{ ...newEmp, id }, ...prev]);
+  const handleAddEmployee = (newEmp: Omit<Employee, 'id'>): Employee => {
+    const id = `EMP-${Math.floor(Math.random() * 9000) + 1000}`;
+    // Auto-generate password: firstname (lowercase) + '@' + last 4 chars of ID
+    const firstName = newEmp.name.trim().split(' ')[0].toLowerCase();
+    const suffix = id.slice(-4);
+    const generatedPassword = `${firstName}@${suffix}`;
+    const employee: Employee = { ...newEmp, id, password: generatedPassword };
+    setEmployees(prev => [employee, ...prev]);
+    return employee;
   };
 
   const handleEditEmployee = (id: string, updatedFields: Partial<Employee>) => {
