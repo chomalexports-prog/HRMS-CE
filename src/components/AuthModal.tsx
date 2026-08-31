@@ -71,9 +71,23 @@ export default function AuthModal({ onLogin }: AuthModalProps) {
       return;
     }
     setResetLoading(true);
-    await new Promise(r => setTimeout(r, 800));
-    setResetLoading(false);
-    setView("forgot-sent");
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setView("forgot-sent");
+      } else {
+        setResetError(data.message || "Something went wrong. Please try again.");
+      }
+    } catch {
+      setResetError("Could not reach the server. Please check your connection and try again.");
+    } finally {
+      setResetLoading(false);
+    }
   };
 
   const goBack = () => {
