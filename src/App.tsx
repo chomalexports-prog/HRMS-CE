@@ -114,7 +114,9 @@ export default function App() {
     appraisals,
     notifications,
     emailCampaigns,
+    passwordResetRequests,
     loading,
+    error,
     addRecord,
     updateRecord,
     deleteRecord
