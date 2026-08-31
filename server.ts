@@ -186,7 +186,7 @@ app.post("/api/auth/forgot-password", async (req, res) => {
     return res.status(400).json({ success: false, message: "Email address is required." });
   }
 
-  const adminEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || "hr@chomalexports.com";
+  const adminEmail = process.env.HR_ADMIN_EMAIL || "chomalexports@gmail.com";
   const requestTime = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
   const subject = `[HRMS-CE] Password Reset Request — ${email}`;

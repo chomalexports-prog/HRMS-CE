@@ -377,7 +377,7 @@ export default function AuthModal({ onLogin }: AuthModalProps) {
                   <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                     <li className="flex items-start gap-2"><span className="text-amber-500 font-bold mt-0.5">1.</span> Your HR Admin has been notified.</li>
                     <li className="flex items-start gap-2"><span className="text-amber-500 font-bold mt-0.5">2.</span> You'll receive your new credentials via your registered email.</li>
-                    <li className="flex items-start gap-2"><span className="text-amber-500 font-bold mt-0.5">3.</span> If urgent, contact HR directly at <span className="font-semibold text-slate-700 dark:text-slate-300">hr@chomalexports.com</span>.</li>
+                    <li className="flex items-start gap-2"><span className="text-amber-500 font-bold mt-0.5">3.</span> If urgent, contact HR directly at <span className="font-semibold text-slate-700 dark:text-slate-300">chomalexports@gmail.com</span>.</li>
                   </ul>
                 </div>
 
