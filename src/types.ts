@@ -157,3 +157,10 @@ export interface EmailLog {
   timestamp: string;
 }
 
+export interface PasswordResetRequest {
+  id: string;
+  email: string;
+  timestamp: string;
+  status: 'Pending' | 'Resolved';
+}
+

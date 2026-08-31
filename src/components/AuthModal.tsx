@@ -1,18 +1,20 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Mail, Lock, LogIn, Eye, EyeOff, AlertCircle, ChevronRight, ArrowLeft, KeyRound, CheckCircle2 } from "lucide-react";
-import { AuthUser } from "../types";
+import { AuthUser, Employee } from "../types";
 import chomalLogo from "../assets/chomal-logo.png";
-import { ADMIN_AUTH_USER, ADMIN_PASSWORD, initialEmployees } from "../data";
+import { ADMIN_AUTH_USER, ADMIN_PASSWORD } from "../data";
 
 interface AuthModalProps {
   onLogin: (user: AuthUser) => void;
   theme: "light" | "dark";
+  employees: Employee[];
+  onForgotPassword?: (email: string) => void;
 }
 
 type View = "login" | "forgot" | "forgot-sent";
 
-export default function AuthModal({ onLogin }: AuthModalProps) {
+export default function AuthModal({ onLogin, employees, onForgotPassword }: AuthModalProps) {
   const [view, setView]         = useState<View>("login");
 
   // Login state
@@ -31,7 +33,7 @@ export default function AuthModal({ onLogin }: AuthModalProps) {
     if (e.trim().toLowerCase() === ADMIN_AUTH_USER.email && p === ADMIN_PASSWORD) {
       return ADMIN_AUTH_USER;
     }
-    const emp = initialEmployees.find(
+    const emp = employees.find(
       em => em.email.toLowerCase() === e.trim().toLowerCase() && em.password === p
     );
     if (emp) {
@@ -71,23 +73,16 @@ export default function AuthModal({ onLogin }: AuthModalProps) {
       return;
     }
     setResetLoading(true);
-    try {
-      const res = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: resetEmail.trim() }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setView("forgot-sent");
-      } else {
-        setResetError(data.message || "Something went wrong. Please try again.");
-      }
-    } catch {
-      setResetError("Could not reach the server. Please check your connection and try again.");
-    } finally {
-      setResetLoading(false);
+    
+    // Simulate network delay for UI feedback
+    await new Promise(r => setTimeout(r, 600));
+    
+    if (onForgotPassword) {
+      onForgotPassword(resetEmail.trim());
     }
+    
+    setView("forgot-sent");
+    setResetLoading(false);
   };
 
   const goBack = () => {

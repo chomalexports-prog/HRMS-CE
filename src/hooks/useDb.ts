@@ -25,6 +25,7 @@ export function useDb() {
   const [appraisals, setAppraisals] = useState<Appraisal[]>([]);
   const [notifications, setNotifications] = useState<HRNotification[]>([]);
   const [emailCampaigns, setEmailCampaigns] = useState<EmailCampaign[]>([]);
+  const [passwordResetRequests, setPasswordResetRequests] = useState<PasswordResetRequest[]>([]);
   
   const [loading, setLoading] = useState(true);
 
@@ -40,7 +41,8 @@ export function useDb() {
       { name: 'assets', setter: setAssets },
       { name: 'appraisals', setter: setAppraisals },
       { name: 'notifications', setter: setNotifications },
-      { name: 'emailCampaigns', setter: setEmailCampaigns }
+      { name: 'emailCampaigns', setter: setEmailCampaigns },
+      { name: 'passwordResetRequests', setter: setPasswordResetRequests }
     ];
 
     let initializedCount = 0;
@@ -86,6 +88,7 @@ export function useDb() {
     appraisals,
     notifications,
     emailCampaigns,
+    passwordResetRequests,
     loading,
     addRecord,
     updateRecord,

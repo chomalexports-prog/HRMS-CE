@@ -11,9 +11,10 @@ import {
   Plus, 
   FileText,
   Cake,
-  Gift
+  Gift,
+  KeyRound
 } from 'lucide-react';
-import { Employee, LeaveRequest, JobOpening, Asset } from '../../types';
+import { Employee, LeaveRequest, JobOpening, Asset, PasswordResetRequest } from '../../types';
 import { 
   BarChart, 
   Bar, 
@@ -33,9 +34,11 @@ interface DashboardViewProps {
   assets: Asset[];
   currentUserName?: string;
   onNavigate: (tab: string) => void;
-  onQuickCheckIn: () => void;
+  onCheckInOut: () => void;
   isCheckedIn: boolean;
   checkInTime: string | null;
+  passwordResetRequests?: PasswordResetRequest[];
+  onResolveResetRequest?: (id: string) => void;
 }
 
 export default function DashboardView({
@@ -45,9 +48,11 @@ export default function DashboardView({
   assets,
   currentUserName,
   onNavigate,
-  onQuickCheckIn,
+  onCheckInOut,
   isCheckedIn,
-  checkInTime
+  checkInTime,
+  passwordResetRequests = [],
+  onResolveResetRequest
 }: DashboardViewProps) {
   
   // Calculate metric values
@@ -99,18 +104,45 @@ export default function DashboardView({
               {isCheckedIn ? `Checked In: ${checkInTime}` : "Currently Clocked Out"}
             </span>
           </div>
-          <button
-            onClick={onQuickCheckIn}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 ${
+          <button 
+            onClick={onCheckInOut}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm ${
               isCheckedIn 
-                ? 'bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60' 
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/10'
+                ? 'bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700' 
+                : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md'
             }`}
           >
-            {isCheckedIn ? "Clock Out" : "Clock In Now"}
+            {isCheckedIn ? 'Clock Out' : 'Clock In Now'}
           </button>
         </div>
       </div>
+
+      {/* Pending Password Reset Requests (Admin Only) */}
+      {passwordResetRequests.some(r => r.status === 'Pending') && onResolveResetRequest && (
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <KeyRound className="w-5 h-5 text-red-600 dark:text-red-400" />
+            <h3 className="font-semibold text-red-900 dark:text-red-300 text-sm">Action Required: Password Resets</h3>
+          </div>
+          <div className="space-y-2">
+            {passwordResetRequests.filter(r => r.status === 'Pending').map(req => (
+              <div key={req.id} className="flex items-center justify-between bg-white dark:bg-slate-900 border border-red-100 dark:border-red-800/50 p-3 rounded-lg">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{req.email}</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">Requested: {new Date(req.timestamp).toLocaleString()}</span>
+                </div>
+                <button
+                  onClick={() => onResolveResetRequest(req.id)}
+                  className="text-xs px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 font-medium transition-colors shadow-sm flex items-center gap-1"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Mark Resolved
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Primary KPI Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

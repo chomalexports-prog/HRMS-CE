@@ -370,8 +370,34 @@ export default function App() {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+          <p className="text-sm font-medium animate-pulse text-slate-500">Connecting to database...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (viewMode === 'auth') {
-    return <AuthModal onLogin={handleLogin} theme={theme} />;
+    return (
+      <AuthModal 
+        onLogin={handleLogin} 
+        theme={theme} 
+        employees={employees}
+        onForgotPassword={(email) => {
+          const id = `PRR-${Math.floor(Math.random() * 900) + 100}`;
+          addRecord('passwordResetRequests', id, {
+            id,
+            email,
+            timestamp: new Date().toISOString(),
+            status: 'Pending'
+          });
+        }}
+      />
+    );
   }
 
   // Sidebar Tabs Config — role-based filtering
@@ -391,17 +417,6 @@ export default function App() {
   const tabs = allTabs.filter(t => isAdmin || !t.adminOnly);
 
   const activeNotificationCount = notifications.filter(n => !n.read).length;
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-          <p className="text-sm font-medium animate-pulse text-slate-500">Connecting to database...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex relative transition-colors duration-200">
@@ -687,6 +702,10 @@ export default function App() {
               jobOpenings={jobOpenings}
               assets={assets}
               currentUserName={currentUser.name}
+              passwordResetRequests={passwordResetRequests}
+              onResolveResetRequest={(id) => {
+                updateRecord('passwordResetRequests', id, { status: 'Resolved' });
+              }}
               onNavigate={(tab: any) => {
                 if (tab === 'idcards') setActiveTab('idcard');
                 else setActiveTab(tab);
