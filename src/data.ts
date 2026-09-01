@@ -17,7 +17,7 @@ import {
 export const ADMIN_AUTH_USER: AuthUser = {
   id: 'admin-001',
   name: 'Admin',
-  email: 'admin@hrms-ce.com',
+  email: 'chomalexports@gmail.com',
   role: 'admin',
   avatar: 'https://api.dicebear.com/9.x/initials/svg?seed=Admin&backgroundColor=4f46e5&fontFamily=Helvetica&fontSize=42&fontWeight=700&textColor=ffffff',
   department: 'Administration',
