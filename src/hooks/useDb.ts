@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, setDoc, doc, updateDoc, deleteDoc, DocumentData, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { supabase } from '../supabase';
 import {
   Employee,
   LeaveRequest,
@@ -11,7 +10,8 @@ import {
   Asset,
   Appraisal,
   HRNotification,
-  EmailCampaign
+  EmailCampaign,
+  PasswordResetRequest
 } from '../types';
 
 export function useDb() {
@@ -31,8 +31,8 @@ export function useDb() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Array of collections to subscribe to
-    const collections = [
+    // Array of tables to subscribe to
+    const tables = [
       { name: 'employees', setter: setEmployees },
       { name: 'leaveRequests', setter: setLeaveRequests },
       { name: 'attendanceLogs', setter: setAttendanceLogs },
@@ -47,38 +47,68 @@ export function useDb() {
     ];
 
     let initializedCount = 0;
-    const unsubscribes = collections.map(({ name, setter }) => {
-      const q = query(collection(db, name));
-      return onSnapshot(q, (snapshot) => {
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        (setter as any)(data);
+    
+    // Fetch initial data and setup subscriptions
+    const setup = async () => {
+      for (const { name, setter } of tables) {
+        // 1. Initial fetch
+        const { data, error: fetchErr } = await supabase.from(name).select('*');
+        if (fetchErr) {
+          console.error(`Error fetching ${name}:`, fetchErr);
+          setError(`Failed to connect to Supabase database. Please check your configuration and ensure you ran the setup SQL script.`);
+          setLoading(false);
+          return;
+        }
+        (setter as any)(data || []);
         
         initializedCount++;
-        if (initializedCount >= collections.length) {
+        if (initializedCount === tables.length) {
           setLoading(false);
           setError(null);
         }
-      }, (err) => {
-        console.error(`Error fetching ${name}:`, err);
-        setError(`Failed to connect to Firebase database. Please check your configuration.`);
-        setLoading(false);
-      });
-    });
 
-    return () => unsubscribes.forEach(unsub => unsub());
+        // 2. Setup real-time subscription
+        supabase.channel(`public:${name}`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: name }, payload => {
+            (setter as any)((prev: any[]) => {
+              if (payload.eventType === 'INSERT') {
+                return [...prev, payload.new];
+              }
+              if (payload.eventType === 'UPDATE') {
+                return prev.map(item => item.id === payload.new.id ? payload.new : item);
+              }
+              if (payload.eventType === 'DELETE') {
+                return prev.filter(item => item.id !== payload.old.id);
+              }
+              return prev;
+            });
+          })
+          .subscribe();
+      }
+    };
+
+    setup();
+
+    return () => {
+      supabase.removeAllChannels();
+    };
   }, []);
 
   // Generic CRUD helpers
   const addRecord = async (col: string, id: string, data: any) => {
-    await setDoc(doc(db, col, id), data);
+    // Supabase allows explicit ID insertion if the column is not auto-increment
+    const { error } = await supabase.from(col).insert({ id, ...data });
+    if (error) console.error(`Error adding to ${col}:`, error);
   };
 
   const updateRecord = async (col: string, id: string, data: any) => {
-    await updateDoc(doc(db, col, id), data);
+    const { error } = await supabase.from(col).update(data).eq('id', id);
+    if (error) console.error(`Error updating ${col}:`, error);
   };
 
   const deleteRecord = async (col: string, id: string) => {
-    await deleteDoc(doc(db, col, id));
+    const { error } = await supabase.from(col).delete().eq('id', id);
+    if (error) console.error(`Error deleting from ${col}:`, error);
   };
 
   return {
