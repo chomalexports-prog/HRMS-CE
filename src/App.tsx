@@ -447,20 +447,7 @@ export default function App() {
 
   if (viewMode === 'auth') {
     return (
-      <AuthModal 
-        onLogin={handleLogin} 
-        theme={theme} 
-        employees={employees}
-        onForgotPassword={(email) => {
-          const id = `PRR-${Math.floor(Math.random() * 900) + 100}`;
-          addRecord('passwordResetRequests', id, {
-            id,
-            email,
-            timestamp: new Date().toISOString(),
-            status: 'Pending'
-          });
-        }}
-      />
+      <AuthModal theme={theme} />
     );
   }
 
