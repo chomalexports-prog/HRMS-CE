@@ -41,6 +41,8 @@ import AssetsView from './components/modules/AssetsView';
 import OrgChartView from './components/modules/OrgChartView';
 import EmailHubView from './components/modules/EmailHubView';
 import { useDb } from './hooks/useDb';
+import { supabase } from './supabase';
+import { ADMIN_AUTH_USER } from './data';
 
 import { Employee, LeaveRequest, AttendanceLog, EmployeeDocument, JobOpening, Candidate, Asset, Appraisal, HRNotification, EmailLog, AuthUser } from './types';
 
@@ -59,30 +61,89 @@ type TabType =
 
 export default function App() {
   // ── Auth State ────────────────────────────────────────────────────────────
-  const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
-    try {
-      const saved = localStorage.getItem('hrms-ce-auth-user');
-      return saved ? (JSON.parse(saved) as AuthUser) : null;
-    } catch { return null; }
-  });
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [viewMode, setViewMode] = useState<'landing' | 'app' | 'auth'>('landing');
+  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
 
-  const handleLogin = (user: AuthUser) => {
-    setAuthUser(user);
-    localStorage.setItem('hrms-ce-auth-user', JSON.stringify(user));
-    setViewMode('app');
-    setActiveTab('dashboard');
-  };
+  const {
+    employees,
+    leaveRequests,
+    attendanceLogs,
+    documents,
+    jobOpenings,
+    candidates,
+    assets,
+    appraisals,
+    notifications,
+    emailCampaigns,
+    passwordResetRequests,
+    loading,
+    error,
+    addRecord,
+    updateRecord,
+    deleteRecord
+  } = useDb();
 
-  const handleSignOut = () => {
+  useEffect(() => {
+    const fetchUser = async (session: any) => {
+      if (!session) {
+        setAuthUser(null);
+        return;
+      }
+      
+      const email = session.user.email;
+      if (email === ADMIN_AUTH_USER.email) {
+        setAuthUser(ADMIN_AUTH_USER);
+        setViewMode('app');
+        return;
+      }
+
+      // Check if they are a registered employee
+      const emp = employees.find(e => e.email.toLowerCase() === email.toLowerCase());
+      if (emp) {
+        setAuthUser({
+          id: emp.id,
+          name: emp.name,
+          email: emp.email,
+          role: "employee",
+          avatar: emp.avatar,
+          department: emp.department,
+          jobTitle: emp.role,
+          employeeId: emp.id,
+        });
+        setViewMode('app');
+      } else {
+        // Default minimal fallback for newly registered accounts
+        setAuthUser({
+          id: session.user.id,
+          name: email.split('@')[0],
+          email: email,
+          role: "employee",
+          avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=fallback",
+          department: "Unassigned",
+          jobTitle: "New Hire",
+          employeeId: session.user.id,
+        });
+        setViewMode('app');
+      }
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      fetchUser(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      fetchUser(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [employees]);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
     setAuthUser(null);
-    localStorage.removeItem('hrms-ce-auth-user');
     setViewMode('landing');
   };
-
-  const [viewMode, setViewMode] = useState<'landing' | 'app' | 'auth'>(
-    () => (localStorage.getItem('hrms-ce-auth-user') ? 'app' : 'landing')
-  );
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('hrms-ce-theme');
@@ -103,24 +164,7 @@ export default function App() {
   // Shared application states
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
-  const {
-    employees,
-    leaveRequests,
-    attendanceLogs,
-    documents,
-    jobOpenings,
-    candidates,
-    assets,
-    appraisals,
-    notifications,
-    emailCampaigns,
-    passwordResetRequests,
-    loading,
-    error,
-    addRecord,
-    updateRecord,
-    deleteRecord
-  } = useDb();
+
 
   // Dynamically derive currentUser from the employee directory. Falls back to a
   // generic placeholder profile until at least one employee has been added.
