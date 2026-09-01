@@ -74,15 +74,26 @@ export default function AuthModal({ onLogin, employees, onForgotPassword }: Auth
     }
     setResetLoading(true);
     
-    // Simulate network delay for UI feedback
-    await new Promise(r => setTimeout(r, 600));
-    
-    if (onForgotPassword) {
-      onForgotPassword(resetEmail.trim());
+    try {
+      // 1. Save to Firebase so admin sees it on their dashboard
+      if (onForgotPassword) {
+        onForgotPassword(resetEmail.trim());
+      }
+
+      // 2. Also trigger server-side email to HR Admin (chomalexports@gmail.com)
+      await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail.trim() }),
+      });
+      
+      setView("forgot-sent");
+    } catch {
+      // Even if email fails, we already saved to Firebase, so show success
+      setView("forgot-sent");
+    } finally {
+      setResetLoading(false);
     }
-    
-    setView("forgot-sent");
-    setResetLoading(false);
   };
 
   const goBack = () => {
